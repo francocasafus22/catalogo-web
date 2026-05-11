@@ -5,6 +5,7 @@ import { MessageCircle } from "lucide-react";
 import Image from "next/image";
 import { products } from "@/data/products";
 import ProductsSection from "@/components/products-sections";
+import Link from "next/link";
 
 export default function Home() {
   return (
@@ -41,10 +42,12 @@ export default function Home() {
               <Button
                 variant="secondary"
                 size="lg"
-                className="border border-border bg-white/80 backdrop-blur-sm"
+                className="border border-border bg-white/80 backdrop-blur-sm"                
               >
-                <MessageCircle />
-                WhatsApp
+                <Link href="https://wa.me/1151605505" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                  <MessageCircle />
+                  WhatsApp
+                </Link>
               </Button>
             </div>
           </div>

@@ -46,8 +46,7 @@ export default function ProductsSection() {
             ease: "power2.out",
             scrollTrigger: {
                 trigger: gridRef.current,
-                start: "top 60%",
-                markers:true,
+                start: "top 60%",               
                 once: true,
                 onEnter: () => {
                 hasAnimated.current = true;
