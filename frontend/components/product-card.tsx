@@ -49,8 +49,8 @@ export default function ProductCard({ product }: { product: any }) {
               ${product.price}
             </span>
           <Button className="w-full hover:bg-primary/80 transition-colors duration-150 cursor-pointer">
-            <MessageCircle />
-            Comprar por WhatsApp
+            
+            Ver Producto
           </Button>
         </div>
       </article>

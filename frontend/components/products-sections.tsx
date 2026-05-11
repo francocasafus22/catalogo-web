@@ -4,21 +4,79 @@ import { useState } from "react";
 import { products } from "@/data/products";
 import ProductCard from "./product-card";
 import { Button } from "./ui/button";
+import { useMemo, useEffect, useRef } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 export default function ProductsSection() {
     const [selectedCategory, setSelectedCategory] = useState("Todas");
-
+    gsap.registerPlugin(ScrollTrigger);
+    const gridRef = useRef<HTMLDivElement>(null);
+ const hasAnimated = useRef(false);
     const categories = [
         "Todas",
         ...new Set(products.flatMap((product) => product.categories)),
     ];
 
     const filteredProducts =
-        selectedCategory === "Todas"
+    selectedCategory === "Todas"
         ? products
         : products.filter((product) =>
             product.categories.includes(selectedCategory)
-            );
+        );
+
+    useEffect(() => {
+    if (!gridRef.current) return;
+
+    const cards = gridRef.current.children;
+
+    // Primera vez al hacer scroll
+    if (!hasAnimated.current) {
+        gsap.fromTo(
+            cards,
+            {
+            opacity: 0,
+            y: 25,
+            },
+            {
+            opacity: 1,
+            y: 0,
+            duration: 0.5,
+            stagger: 0.06,
+            ease: "power2.out",
+            scrollTrigger: {
+                trigger: gridRef.current,
+                start: "top 60%",
+                markers:true,
+                once: true,
+                onEnter: () => {
+                hasAnimated.current = true;
+                },
+            },
+            }
+        );
+
+        return;
+        }
+
+        // Cambio de categoría
+        gsap.killTweensOf(cards);
+
+        gsap.fromTo(
+        cards,
+        {
+            opacity: 0,
+            y: 15,
+        },
+        {
+            opacity: 1,
+            y: 0,
+            duration: 0.4,
+            stagger: 0.04,
+            ease: "power1.out",
+        }
+        );
+    }, [filteredProducts]);
 
     return (
         <main className="flex-1 bg-background px-6 py-20">
@@ -62,12 +120,20 @@ export default function ProductsSection() {
             </div>
 
             {/* GRID */}
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" ref={gridRef}>
             {filteredProducts.map((product) => (
                 <ProductCard
                 key={product.id}
                 product={product}
                 />
+                
+            ))}
+            {filteredProducts.map((product) => (
+                <ProductCard
+                key={product.id}
+                product={product}
+                />
+                
             ))}
             </div>
         </section>
