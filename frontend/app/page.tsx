@@ -3,6 +3,8 @@ import ProductCard from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
 import Image from "next/image";
+import { products } from "@/data/products";
+import ProductsSection from "@/components/products-sections";
 
 export default function Home() {
   return (
@@ -50,52 +52,7 @@ export default function Home() {
         </div>
       </section>
 
-      <main className="flex-1 bg-background px-6 py-20">
-  <section className="mx-auto max-w-7xl" id="products">
-
-    {/* HEADER */}
-    <div className="mb-12 flex flex-col ">
-      <span className="mb-3 rounded-full w-fit bg-[#ffe2ec] px-4 py-1 text-sm font-medium text-[#df0909]">
-        CATÁLOGO
-      </span>
-
-      <h2 className="text-4xl font-black tracking-tight md:text-5xl">
-        Nuestros productos
-      </h2>
-
-      <p className="mt-4 max-w-2xl text-muted-foreground">
-        Descubrí los nuevos ingresos, básicos y prendas más vendidas.
-      </p>
-    </div>
-
-    {/* FILTERS */}
-    <div className="mb-10 flex flex-wrap items-center justify-center gap-3">
-      <Button variant="default">
-        Todos
-      </Button>
-
-      <Button variant="secondary">
-        Buzos
-      </Button>
-
-      <Button variant="secondary">
-        Remeras
-      </Button>
-
-      <Button variant="secondary">
-        Jeans
-      </Button>
-    </div>
-
-    {/* PRODUCTS GRID */}
-    <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-
-      <ProductCard />
-
-      {/* DUPLICAR CARDS */}
-    </div>
-  </section>
-</main>
+      <ProductsSection/>
     </div>
   );
 }
