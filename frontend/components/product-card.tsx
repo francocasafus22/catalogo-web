@@ -1,10 +1,11 @@
 import Image from "next/image"
 import { Button } from "./ui/button"
 import { MessageCircle } from "lucide-react"
+import Link from "next/link"
 
 export default function ProductCard({ product }: { product: any }) {
     return ( 
-        <article className="group overflow-hidden rounded-3xl border bg-card transition-all hover:scale-102 cursor-pointer duration-250 hover:shadow-2xl ">
+        <Link href={`/${product.slug}`} className="group overflow-hidden rounded-3xl border bg-card transition-all hover:scale-102 cursor-pointer duration-250 hover:shadow-2xl ">
 
             {/* IMAGE */}
             <div className="relative h-[400px] overflow-hidden">
@@ -53,6 +54,6 @@ export default function ProductCard({ product }: { product: any }) {
                 Ver Producto
             </Button>
             </div>
-        </article>
+        </Link>
     )
 }

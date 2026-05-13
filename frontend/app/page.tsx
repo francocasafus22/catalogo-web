@@ -9,12 +9,11 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 bg-background">
-      <Navbar />
 
-      <section className="relative w-full min-h-[80vh] overflow-hidden bg-primary  text-primary-foreground">    
+<>
+      <section className="relative w-full min-h-[70vh] overflow-hidden bg-primary  text-primary-foreground">    
 
-        <div className="relative mx-auto flex min-h-[80vh] justify-center text-center items-center gap-16 px-6 py-12">
+        <div className="relative mx-auto flex min-h-[70vh] justify-center text-center items-center gap-16 px-6 py-12">
                     
           <div className="flex flex-col items-center">
             
@@ -56,6 +55,6 @@ export default function Home() {
       </section>
 
       <ProductsSection/>
-    </div>
+      </>
   );
 }

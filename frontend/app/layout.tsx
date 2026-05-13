@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/theme-provider";
+import Navbar from "@/components/Navbar";
 
 const outfit = Outfit({subsets:['latin'],variable:'--font-sans'});
 
@@ -35,7 +36,11 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
 
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem={false} disableTransitionOnChange>
-          {children}
+          <div className="flex flex-col flex-1 bg-background">
+            <Navbar />
+            {children}
+          </div>
+          
         </ThemeProvider>
 
       </body>
