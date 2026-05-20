@@ -5,7 +5,7 @@ export const products = [
         slug: "campera-boxi-con-piel-venice",
         colors: ["Negro", "Beige", "Gris"],        
         description: "Campera con Piel · Boxi fit",
-        image: "/campera.png",
+        image: ["/campera.png"],
         price: 45000,
         categories: ["camperas"],
         tags: ["nuevo", "destacado"]
@@ -16,7 +16,7 @@ export const products = [
         slug: "jean-rigido-wide-leg",
         colors: ["Negro", "Azul", "Gris"],
         description: "Jean rigido con corte wide leg",
-        image: "/jean-wide-leg.JPEG",
+        image: ["/jean-wide-leg.JPEG"],
         price: 35000,
         categories: ["jeans"],
         tags: ["nuevo", "destacado"]
@@ -27,7 +27,7 @@ export const products = [
         slug: "calza-lycra-chupin-con-friza",
         colors: ["Negro"],
         description: "Calza chupin con friza y lycra",
-        image: "/calza-chupin.JPEG",
+        image: ["/calza-chupin.JPEG"],
         price: 15000,
         categories: ["calzas"],
         tags: ["nuevo", "destacado"]
@@ -38,7 +38,7 @@ export const products = [
         slug: "jean-elastizado-chupin",
         colors: ["Negro", "Beige", "Gris"],
         description: "Jean elastizado con corte chupin",
-        image: "/jean-chupin-azul.JPEG",
+        image: ["/jean-chupin-azul.JPEG"],
         price: 35000,
         categories: ["jeans"],
         tags: ["nuevo", "destacado"]

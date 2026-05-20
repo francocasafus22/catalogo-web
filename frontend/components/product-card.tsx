@@ -11,7 +11,7 @@ export default function ProductCard({ product }: { product: any }) {
             <div className="relative h-[400px] overflow-hidden">
             
             <Image
-                src={product.image}
+                src={product.image[0]}
                 alt={product.name}
                 fill
                 className="object-cover"

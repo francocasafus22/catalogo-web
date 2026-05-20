@@ -17,11 +17,11 @@ export default function Home() {
                     
           <div className="flex flex-col items-center">
             
-            <span className="mb-4 w-fit rounded-full border border-[#df0909]/20 bg-white/70 px-4 py-1 text-sm font-medium text-[#df0909] backdrop-blur-sm">
+            <span className="mb-4 w-fit rounded-full border border-brand-red/30 bg-white/70 px-4 py-1 text-sm font-medium text-brand-red backdrop-blur-sm">
               NUEVA COLECCIÓN
             </span>
 
-            <h1 className="mb-6 text-5xl font-black tracking-tight text-[#df0909] md:text-7xl">
+            <h1 className="mb-6 text-5xl font-black tracking-tight text-brand-red md:text-7xl">
               Mariana Duran
             </h1>
 
@@ -33,9 +33,9 @@ export default function Home() {
               
               <Button
                 size="lg"
-                className="bg-[#df0909] text-white hover:bg-[#c40808]"
+                className="bg-brand-red text-white hover:bg-[#c40808]"
               >
-                <a href="#products">Ver catálogo</a>
+                <Link href="/catalogo">Ver catálogo</Link>
               </Button>
 
               <Button

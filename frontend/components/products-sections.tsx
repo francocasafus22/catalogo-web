@@ -7,6 +7,7 @@ import { Button } from "./ui/button";
 import { useMemo, useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Link from "next/link";
 
 export default function ProductsSection() {
     const [selectedCategory, setSelectedCategory] = useState("Todas");
@@ -87,7 +88,7 @@ export default function ProductsSection() {
             </span>
 
             <h2 className="text-4xl font-black tracking-tight md:text-5xl">
-                Nuestros productos
+                Más vendidos
             </h2>
 
             <p className="mt-4 max-w-2xl text-muted-foreground">
@@ -126,15 +127,14 @@ export default function ProductsSection() {
                 product={product}
                 />
                 
-            ))}
-            {filteredProducts.map((product) => (
-                <ProductCard
-                key={product.id}
-                product={product}
-                />
-                
-            ))}
+            ))}            
             </div>
+
+            <Link href="/catalogo" className="mt-12 flex justify-center">
+            <Button variant="outline" size="lg" className="text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-all duration-300 cursor-pointer bg-transparent border-primary border-3">
+                Ver más productos
+            </Button>
+            </Link>
         </section>
         </main>
     );
