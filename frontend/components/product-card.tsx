@@ -1,58 +1,58 @@
 import Image from "next/image"
-import { Button } from "./ui/button"
-import { MessageCircle } from "lucide-react"
 import Link from "next/link"
 
 export default function ProductCard({ product }: { product: any }) {
     return ( 
-        <Link href={`/${product.slug}`} className="group overflow-hidden rounded-3xl border bg-card transition-all hover:scale-102 cursor-pointer duration-250 hover:shadow-2xl ">
+        <Link href={`/producto/${product.slug}`} className="group flex h-full flex-col overflow-hidden rounded-2xl border bg-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl sm:rounded-3xl">
 
             {/* IMAGE */}
-            <div className="relative h-[400px] overflow-hidden">
+            <div className="relative aspect-[4/5] overflow-hidden bg-muted">
             
             <Image
                 src={product.image[0]}
                 alt={product.name}
                 fill
+                unoptimized
                 className="object-cover"
             />
 
             {/* BADGE */}
-            <span className="absolute left-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">
-                {product.tags.includes("nuevo") ? "NUEVO" : ""}
-            </span>
+            {product.tags.includes("nuevo") && (
+                <span className="absolute left-2 top-2 rounded-full bg-brand-red px-2.5 py-1 text-[10px] font-bold tracking-wide text-white sm:left-4 sm:top-4 sm:px-3 sm:text-xs">
+                    NUEVO
+                </span>
+            )}
             </div>
 
             {/* CONTENT */}
-            <div className="p-5 flex  flex-col gap-2">
+            <div className="flex flex-1 flex-col gap-2 p-3 sm:gap-3 sm:p-5">
 
             <div className="flex items-start justify-between gap-4">
-                <h3 className="text-lg font-semibold">
+                <h3 className="text-sm font-semibold leading-snug sm:text-lg">
                 {product.name}
                 </h3>            
             </div>
 
                 <div className="flex">                
-                {product.colors.map((color: string, index: number) => (
+                {product.colors.slice(0, 3).map((color: string, index: number) => (
                     <span
                     key={index}
-                    className="inline-block bg-muted text-muted-foreground px-2 py-1 text-xs font-medium rounded-full mr-2"
+                    className="inline-block rounded-full bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground sm:text-xs"
                     >
                     {color}
                     </span>
                 ))}
                 </div>
 
-            <p className="text-sm text-muted-foreground">
+            <p className="hidden text-sm text-muted-foreground sm:block">
                 {product.description}
             </p>
-                <span className="font-bold text-xl text-brand-red">
-                ${product.price}
+                <span className="mt-auto pt-1 text-base font-bold text-brand-red sm:text-xl">
+                ${product.price.toLocaleString("es-AR")}
                 </span>
-            <Button className="w-full hover:bg-primary/80 transition-colors duration-150 cursor-pointer">
-                
-                Ver Producto
-            </Button>
+            <span className="mt-1 flex min-h-10 w-full items-center justify-center rounded-lg bg-primary px-2 text-xs font-semibold text-primary-foreground transition-colors group-hover:bg-brand-red group-hover:text-white sm:mt-2 sm:min-h-11 sm:text-sm">
+                Ver producto
+            </span>
             </div>
         </Link>
     )

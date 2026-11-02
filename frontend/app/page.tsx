@@ -1,13 +1,11 @@
-import Navbar from "@/components/Navbar";
-import ProductCard from "@/components/product-card";
 import { Button } from "@/components/ui/button";
 import { MessageCircle } from "lucide-react";
-import Image from "next/image";
-import { products } from "@/data/products";
 import ProductsSection from "@/components/products-sections";
 import Link from "next/link";
+import { getCatalogProducts } from "@/lib/catalog-data";
 
-export default function Home() {
+export default async function Home() {
+  const products = await getCatalogProducts();
   return (
 
 <>
@@ -54,7 +52,7 @@ export default function Home() {
         </div>
       </section>
 
-      <ProductsSection/>
+      <ProductsSection products={products}/>
       </>
   );
 }

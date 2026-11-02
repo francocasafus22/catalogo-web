@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { products } from "@/data/products";
+import type { CatalogProduct } from "@/lib/catalog-types";
 import ProductCard from "./product-card";
 import { Button } from "./ui/button";
 import { useMemo, useEffect, useRef } from "react";
@@ -9,7 +9,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Link from "next/link";
 
-export default function ProductsSection() {
+export default function ProductsSection({ products }: { products: CatalogProduct[] }) {
     const [selectedCategory, setSelectedCategory] = useState("Todas");
     gsap.registerPlugin(ScrollTrigger);
     const gridRef = useRef<HTMLDivElement>(null);

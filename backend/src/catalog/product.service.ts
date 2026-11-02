@@ -1,0 +1,124 @@
+import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { DatabaseService } from "../database.service";
+import { CreateProductDto, ProductVariantDto, UpdateProductDto } from "./product.dto";
+
+type ProductVariant = ProductVariantDto;
+
+function summarizeVariants(variants: ProductVariant[]) {
+  const variantKeys = new Set<string>();
+  for (const variant of variants) {
+    const variantKey = `${variant.name.trim().toLowerCase()}:${variant.value.trim().toLowerCase()}`;
+    if (variantKeys.has(variantKey)) throw new ConflictException("No repitas el mismo tipo y valor de variante");
+    variantKeys.add(variantKey);
+    const sizeKeys = new Set<string>();
+    for (const item of variant.sizes) {
+      const sizeKey = item.size.trim().toLowerCase();
+      if (sizeKeys.has(sizeKey)) throw new ConflictException(`El talle ${item.size} está repetido en ${variant.value}`);
+      sizeKeys.add(sizeKey);
+    }
+  }
+  const colors = [...new Set(variants.filter((variant) => variant.name.toLowerCase() === "color").map((variant) => variant.value))];
+  const sizes = [...new Set(variants.flatMap((variant) => variant.sizes.map((item) => item.size)))];
+  const stock = variants.reduce((total, variant) => total + variant.sizes.reduce((sum, item) => sum + item.stock, 0), 0);
+  return { colors, sizes, stock };
+}
+
+function toSlug(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+const SELECT_PRODUCTS = `
+  SELECT p.id, p.name, p.slug, p.description, p.price, p.cost_price, p.image, p.colors, p.sizes,
+    p.stock, p.variants, p.category_id, p.tags, p.created_at, p.updated_at,
+    c.name AS category_name, c.slug AS category_slug
+  FROM products p JOIN categories c ON c.id = p.category_id
+`;
+
+@Injectable()
+export class ProductService {
+  constructor(private readonly db: DatabaseService) {}
+
+  async publicList() {
+    const { rows } = await this.db.query(`${SELECT_PRODUCTS} ORDER BY p.created_at DESC, p.id DESC`);
+    return rows.map((row) => ({
+      id: Number(row.id), name: row.name, slug: row.slug, description: row.description,
+      price: Number(row.price), image: row.image, colors: row.colors, sizes: row.sizes,
+      stock: Number(row.stock), variants: row.variants, categories: [row.category_slug], tags: row.tags,
+    }));
+  }
+
+  async publicBySlug(slug: string) {
+    const { rows } = await this.db.query(`${SELECT_PRODUCTS} WHERE p.slug = $1`, [slug]);
+    if (!rows[0]) throw new NotFoundException("Producto no encontrado");
+    const row = rows[0];
+    return {
+      id: Number(row.id), name: row.name, slug: row.slug, description: row.description,
+      price: Number(row.price), image: row.image, colors: row.colors, sizes: row.sizes,
+      stock: Number(row.stock), variants: row.variants, categories: [row.category_slug], tags: row.tags,
+    };
+  }
+
+  async adminList() {
+    const { rows } = await this.db.query(`${SELECT_PRODUCTS} ORDER BY p.created_at DESC, p.id DESC`);
+    return rows.map((row) => ({ ...row, id: Number(row.id), categoryId: Number(row.category_id), price: Number(row.price), costPrice: Number(row.cost_price), stock: Number(row.stock), image: row.image[0] ?? "" }));
+  }
+
+  async create(input: CreateProductDto) {
+    const slug = await this.uniqueSlug(toSlug(input.name));
+    const summary = summarizeVariants(input.variants);
+    const { rows } = await this.db.query(
+      `INSERT INTO products (name, slug, description, price, cost_price, image, colors, sizes, stock, category_id, tags, variants)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb) RETURNING id`,
+      [input.name.trim(), slug, input.description.trim(), input.price, input.costPrice, [input.image.trim()], summary.colors, summary.sizes, summary.stock, input.categoryId, input.tags ?? [], JSON.stringify(input.variants)],
+    ).catch((error) => this.mapWriteError(error));
+    return this.adminById(Number(rows[0].id));
+  }
+
+  async adminById(id: number) {
+    const { rows } = await this.db.query(`${SELECT_PRODUCTS} WHERE p.id = $1`, [id]);
+    if (!rows[0]) throw new NotFoundException("Producto no encontrado");
+    const row = rows[0];
+    return { ...row, id: Number(row.id), categoryId: Number(row.category_id), price: Number(row.price), costPrice: Number(row.cost_price), stock: Number(row.stock), image: row.image[0] ?? "" };
+  }
+
+  async update(id: number, input: UpdateProductDto) {
+    const current = await this.adminById(id);
+    const nextName = input.name?.trim() ?? current.name;
+    let slug = current.slug;
+    if (input.name && toSlug(nextName) !== current.slug) slug = await this.uniqueSlug(toSlug(nextName), id);
+    const variants = input.variants ?? current.variants;
+    const summary = summarizeVariants(variants);
+    await this.db.query(
+      `UPDATE products SET name=$1, slug=$2, description=$3, price=$4, cost_price=$5, image=$6,
+       colors=$7, sizes=$8, stock=$9, category_id=$10, tags=$11, variants=$12::jsonb, updated_at=NOW() WHERE id=$13`,
+      [nextName, slug, input.description?.trim() ?? current.description, input.price ?? current.price,
+        input.costPrice ?? current.cost_price, [input.image?.trim() ?? current.image], summary.colors, summary.sizes, summary.stock,
+        input.categoryId ?? current.categoryId, input.tags ?? current.tags, JSON.stringify(variants), id],
+    ).catch((error) => this.mapWriteError(error));
+    return this.adminById(id);
+  }
+
+  async remove(id: number) {
+    const result = await this.db.query("DELETE FROM products WHERE id=$1 RETURNING id", [id]);
+    if (!result.rowCount) throw new NotFoundException("Producto no encontrado");
+    return { success: true };
+  }
+
+  private async uniqueSlug(base: string, excludeId?: number) {
+    if (!base) throw new ConflictException("El nombre debe incluir letras o números");
+    let candidate = base;
+    let suffix = 2;
+    for (;;) {
+      const { rows } = await this.db.query("SELECT id FROM products WHERE slug=$1", [candidate]);
+      if (!rows[0] || Number(rows[0].id) === excludeId) return candidate;
+      candidate = `${base}-${suffix++}`;
+    }
+  }
+
+  private mapWriteError(error: { code?: string; message?: string }): never {
+    if (error.code === "23503") throw new ConflictException("La categoría seleccionada no existe");
+    if (error.code === "23505") throw new ConflictException("Ya existe un producto con esos datos");
+    throw error;
+  }
+}

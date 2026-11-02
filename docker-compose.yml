@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: catalogo
+      POSTGRES_USER: catalogo
+      POSTGRES_PASSWORD: catalogo
+    ports:
+      - "5432:5432"
+    volumes:
+      - catalogo-postgres:/var/lib/postgresql/data
+
+volumes:
+  catalogo-postgres:
