@@ -1,9 +1,9 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Pencil, Plus, Trash2 } from "lucide-react";
 
 type Category = { id: number; name: string; slug: string; productCount: number };
 type VariantSize = { size: string; stock: number };
@@ -11,23 +11,25 @@ type ProductVariant = { name: string; value: string; sizes: VariantSize[]; image
 type Product = {
   id: number; name: string; slug: string; description: string; price: number; costPrice: number;
   image: string; variants: ProductVariant[]; sizes: string[]; stock: number;
-  categoryId: number; category_name: string; tags: string[];
+  categoryId: number; category_name: string; tags: string[]; visible: boolean;
 };
 type ProductForm = {
   name: string; description: string; price: string; costPrice: string; image: string;
-  variants: ProductVariant[]; categoryId: string; tags: string;
+  variants: ProductVariant[]; categoryId: string; tags: string; visible: boolean;
 };
 const emptyProduct: ProductForm = {
   name: "", description: "", price: "", costPrice: "", image: "", categoryId: "", tags: "",
-  variants: [{ name: "Color", value: "", sizes: [{ size: "", stock: 0 }], images: [] }],
+  variants: [{ name: "Color", value: "", sizes: [{ size: "", stock: 0 }], images: [] }], visible: false,
 };
 const splitList = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
 
 export default function AdminCatalogManager() {
   const router = useRouter();
+  const productFormRef = useRef<HTMLFormElement>(null);
   const [section, setSection] = useState<"products" | "categories">("products");
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [expandedCategoryIds, setExpandedCategoryIds] = useState<Set<number>>(() => new Set());
   const [editingProduct, setEditingProduct] = useState<number | null>(null);
   const [productForm, setProductForm] = useState<ProductForm>(emptyProduct);
   const [categoryName, setCategoryName] = useState("");
@@ -38,6 +40,27 @@ export default function AdminCatalogManager() {
   const [uploadingVariant, setUploadingVariant] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+
+  const productGroups = categories.map((category) => ({
+    id: category.id,
+    name: category.name,
+    products: products.filter((product) => product.categoryId === category.id),
+  }));
+  const uncategorizedProducts = products.filter((product) => !categories.some((category) => category.id === product.categoryId));
+  if (uncategorizedProducts.length) productGroups.push({ id: -1, name: "Sin categoría", products: uncategorizedProducts });
+
+  function toggleCategory(categoryId: number) {
+    setExpandedCategoryIds((current) => {
+      const next = new Set(current);
+      if (next.has(categoryId)) next.delete(categoryId);
+      else next.add(categoryId);
+      return next;
+    });
+  }
+
+  function setAllCategoriesExpanded(expanded: boolean) {
+    setExpandedCategoryIds(expanded ? new Set(productGroups.map((group) => group.id)) : new Set());
+  }
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -77,10 +100,11 @@ export default function AdminCatalogManager() {
     setProductForm({
       name: product.name, description: product.description, price: String(product.price), costPrice: String(product.costPrice), image: product.image,
       variants: product.variants.map((variant) => ({ ...variant, images: variant.images ?? [] })),
-      categoryId: String(product.categoryId), tags: product.tags.join(", "),
+      categoryId: String(product.categoryId), tags: product.tags.join(", "), visible: product.visible,
     });
     setError("");
     setFormOpen(true);
+    requestAnimationFrame(() => productFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
   function updateVariant(index: number, changes: Partial<ProductVariant>) {
@@ -162,7 +186,7 @@ export default function AdminCatalogManager() {
         name: variant.name.trim(), value: variant.value.trim(),
         sizes: variant.sizes.map((item) => ({ size: item.size.trim(), stock: Number(item.stock) })),
       })),
-      categoryId: Number(productForm.categoryId), tags: splitList(productForm.tags),
+      categoryId: Number(productForm.categoryId), tags: splitList(productForm.tags), visible: productForm.visible,
     };
     try {
       const response = await fetch(editingProduct ? `/api/admin/products/${editingProduct}` : "/api/admin/products", {
@@ -175,6 +199,7 @@ export default function AdminCatalogManager() {
       setFormOpen(false);
       setNotice(editingProduct ? "Producto actualizado." : "Producto creado.");
       await loadData();
+      if (editingProduct) window.dispatchEvent(new Event("admin-products-updated"));
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "No se pudo guardar el producto.");
     } finally {
@@ -253,7 +278,7 @@ export default function AdminCatalogManager() {
       {loading ? <p className="py-8 text-center text-sm text-muted-foreground">Cargando catálogo…</p> : (
         <>
           {section === "products" && formOpen && (
-            <form onSubmit={submitProduct} className="mt-5 rounded-2xl border border-border bg-muted/30 p-4 sm:p-6">
+            <form ref={productFormRef} onSubmit={submitProduct} className="mt-5 scroll-mt-24 rounded-2xl border border-border bg-muted/30 p-4 sm:p-6">
               <div className="mb-4 flex items-center justify-between gap-3">
                 <h3 className="text-lg font-bold">{editingProduct ? "Editar producto" : "Nuevo producto"}</h3>
                 <button type="button" onClick={() => setFormOpen(false)} className="min-h-10 px-3 text-sm text-muted-foreground hover:text-foreground">Cancelar</button>
@@ -312,6 +337,10 @@ export default function AdminCatalogManager() {
                   <button type="button" onClick={() => setProductForm((current) => ({ ...current, variants: [...current.variants, { name: "", value: "", sizes: [{ size: "", stock: 0 }], images: [] }] }))} className="mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-semibold hover:bg-muted"><Plus className="h-4 w-4" aria-hidden="true" /> Agregar variante</button>
                 </div>
                 <label className="text-sm font-medium sm:col-span-2">Etiquetas <span className="font-normal text-muted-foreground">(separadas por coma)</span><input value={productForm.tags} onChange={(event) => setProductForm({ ...productForm, tags: event.target.value })} placeholder="nuevo, destacado" className={inputClass} /></label>
+                <label className="sm:col-span-2 flex min-h-12 items-center gap-3 rounded-xl border border-border px-3 text-sm font-medium">
+                  <input type="checkbox" checked={productForm.visible} onChange={(event) => setProductForm({ ...productForm, visible: event.target.checked })} className="h-4 w-4 accent-brand-red" />
+                  Mostrar este producto en el catálogo público
+                </label>
               </div>
               <button disabled={saving || uploadingVariant !== null || categories.length === 0} type="submit" className="mt-5 min-h-11 w-full rounded-xl bg-brand-red px-5 font-semibold text-white hover:bg-[#c40808] disabled:opacity-50 sm:w-auto">{saving ? "Guardando…" : editingProduct ? "Guardar cambios" : "Crear producto"}</button>
               {categories.length === 0 && <p className="mt-3 text-sm text-destructive">Primero creá una categoría.</p>}
@@ -319,21 +348,40 @@ export default function AdminCatalogManager() {
           )}
 
           {section === "products" && (
-            <div className="mt-4 divide-y divide-border">
-              {products.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">Todavía no hay productos. Agregá el primero.</p> : products.map((product) => (
-                <article key={product.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <p className="font-semibold">{product.name}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{product.category_name} · {product.variants.map((variant) => `${variant.name}: ${variant.value} (${variant.sizes.map((item) => `${item.size}: ${item.stock}`).join(", ")})`).join(" · ")}</p>
-                    <p className="mt-1 text-xs font-medium text-muted-foreground">Stock total: {product.stock}</p>
-                    <p className="mt-1 text-sm font-bold text-brand-red">Venta ${product.price.toLocaleString("es-AR")} · Costo ${product.costPrice.toLocaleString("es-AR")}</p>
-                  </div>
-                  <div className="flex shrink-0 gap-2">
-                    <button type="button" onClick={() => beginEditProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium hover:bg-muted"><Pencil className="h-4 w-4" aria-hidden="true" /> Editar</button>
-                    <button type="button" onClick={() => void deleteProduct(product)} aria-label={`Eliminar ${product.name}`} className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-3 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" aria-hidden="true" /></button>
-                  </div>
-                </article>
-              ))}
+            <div className="mt-4">
+              {products.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">Todavía no hay productos. Agregá el primero.</p> : <>
+                <div className="mb-3 flex justify-end gap-2">
+                  <button type="button" onClick={() => setAllCategoriesExpanded(true)} className="min-h-10 rounded-lg border border-border px-3 text-sm font-medium hover:bg-muted">Desplegar todo</button>
+                  <button type="button" onClick={() => setAllCategoriesExpanded(false)} className="min-h-10 rounded-lg border border-border px-3 text-sm font-medium hover:bg-muted">Contraer todo</button>
+                </div>
+                <div className="space-y-3">
+                  {productGroups.map((group) => {
+                    const expanded = expandedCategoryIds.has(group.id);
+                    const stock = group.products.reduce((sum, product) => sum + product.stock, 0);
+                    return <section key={group.id} className="overflow-hidden rounded-xl border border-border">
+                      <button type="button" aria-expanded={expanded} onClick={() => toggleCategory(group.id)} className="flex min-h-14 w-full items-center justify-between gap-3 bg-muted/40 px-4 py-3 text-left hover:bg-muted/70">
+                        <span className="flex min-w-0 items-center gap-2 font-semibold">{expanded ? <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" /> : <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />}<span className="truncate">{group.name}</span></span>
+                        <span className="shrink-0 text-xs text-muted-foreground">{group.products.length} {group.products.length === 1 ? "producto" : "productos"} · Stock {stock}</span>
+                      </button>
+                      {expanded && <div className="divide-y divide-border px-4">{group.products.length === 0 ? <p className="py-4 text-sm text-muted-foreground">No hay productos en esta categoría.</p> : group.products.map((product) => (
+                        <article key={product.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
+                            <p className="font-semibold">{product.name}</p>
+                            <p className={`mt-1 text-xs font-semibold ${product.visible ? "text-emerald-700" : "text-muted-foreground"}`}>{product.visible ? "Visible en el catálogo" : "Oculto del catálogo"}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">{product.variants.map((variant) => `${variant.name}: ${variant.value} (${variant.sizes.map((item) => `${item.size}: ${item.stock}`).join(", ")})`).join(" · ")}</p>
+                            <p className="mt-1 text-xs font-medium text-muted-foreground">Stock total: {product.stock}</p>
+                            <p className="mt-1 text-sm font-bold text-brand-red">Venta ${product.price.toLocaleString("es-AR")} · Costo ${product.costPrice.toLocaleString("es-AR")}</p>
+                          </div>
+                          <div className="flex shrink-0 gap-2">
+                            <button type="button" onClick={() => beginEditProduct(product)} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium hover:bg-muted"><Pencil className="h-4 w-4" aria-hidden="true" /> Editar</button>
+                            <button type="button" onClick={() => void deleteProduct(product)} aria-label={`Eliminar ${product.name}`} className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border px-3 text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" aria-hidden="true" /></button>
+                          </div>
+                        </article>
+                      ))}</div>}
+                    </section>;
+                  })}
+                </div>
+              </>}
             </div>
           )}
 

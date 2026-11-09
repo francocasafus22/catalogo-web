@@ -1,6 +1,6 @@
 import { Type } from "class-transformer";
 import {
-  ArrayMinSize, IsArray, IsInt, IsOptional, IsString, Min, MinLength, ValidateNested,
+  ArrayMinSize, IsArray, IsBoolean, IsInt, IsOptional, IsString, Min, MinLength, ValidateNested,
 } from "class-validator";
 
 export class VariantSizeDto {
@@ -26,6 +26,7 @@ export class CreateProductDto {
   @IsArray() @ArrayMinSize(1) @ValidateNested({ each: true }) @Type(() => ProductVariantDto)
   variants!: ProductVariantDto[];
   @IsOptional() @IsArray() @IsString({ each: true }) tags?: string[];
+  @IsOptional() @IsBoolean() visible?: boolean;
 }
 
 export class UpdateProductDto {
@@ -38,4 +39,5 @@ export class UpdateProductDto {
   @IsOptional() @IsArray() @ArrayMinSize(1) @ValidateNested({ each: true }) @Type(() => ProductVariantDto)
   variants?: ProductVariantDto[];
   @IsOptional() @IsArray() @IsString({ each: true }) tags?: string[];
+  @IsOptional() @IsBoolean() visible?: boolean;
 }

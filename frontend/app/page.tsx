@@ -15,7 +15,7 @@ export default async function Home() {
                     
           <div className="flex flex-col items-center">
             
-            <span className="mb-4 w-fit rounded-full border border-brand-red/30 bg-white/70 px-4 py-1 text-sm font-medium text-brand-red backdrop-blur-sm">
+            <span className="mb-4 w-fit rounded-full border border-brand-red/30 bg-background/70 px-4 py-1 text-sm font-medium text-brand-red backdrop-blur-sm">
               NUEVA COLECCIÓN
             </span>
 
@@ -39,7 +39,7 @@ export default async function Home() {
               <Button
                 variant="secondary"
                 size="lg"
-                className="border border-border bg-white/80 backdrop-blur-sm"                
+                className="border border-border bg-background/80 backdrop-blur-sm"                
               >
                 <Link href="https://wa.me/1151605505" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
                   <MessageCircle />

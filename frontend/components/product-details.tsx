@@ -12,9 +12,10 @@ export default function ProductDetails({ product }: { product: CatalogProduct })
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const selectedVariant = selectedVariantIndex === null ? undefined : variants[selectedVariantIndex];
   const selectedInventory = selectedVariant?.sizes.find((item) => item.size === selectedSize);
+  const availableSizes = selectedVariant?.sizes.filter((item) => item.stock > 0) ?? [];
   const images = selectedVariant?.images?.length ? selectedVariant.images : product.image;
   const activeImage = images[activeImageIndex] ?? images[0];
-  const hasSelection = Boolean(selectedVariant && selectedInventory);
+  const hasSelection = Boolean(selectedVariant && (selectedInventory || availableSizes.length === 0));
   const variantLabel = selectedVariant ? `${selectedVariant.name}: ${selectedVariant.value}` : "";
   const message = encodeURIComponent(
     `Hola! Quiero consultar por ${product.name}. ${variantLabel}. Talle: ${selectedSize}. Stock publicado: ${selectedInventory?.stock ?? 0}. ¿Me confirman disponibilidad y cómo comprar?`,
@@ -97,29 +98,32 @@ export default function ProductDetails({ product }: { product: CatalogProduct })
           )}
         </fieldset>
 
-        {selectedVariant && (
+        {selectedVariant && availableSizes.length > 0 && (
           <fieldset className="mt-6 w-full border-t border-border pt-6">
             <legend className="text-sm font-semibold">Talle · {selectedVariant.value}</legend>
             <div className="mt-3 flex flex-wrap gap-2">
-              {selectedVariant.sizes.map((item) => {
+              {availableSizes.map((item) => {
                 const selected = selectedSize === item.size;
-                const outOfStock = item.stock < 1;
                 return (
                   <button
                     key={item.size}
                     type="button"
                     aria-pressed={selected}
                     onClick={() => setSelectedSize(item.size)}
-                    className={`min-w-14 rounded-lg border px-3 py-2 text-center text-sm font-medium transition-colors ${selected ? "border-brand-red bg-brand-red text-white" : "border-border bg-card hover:border-brand-red"} ${outOfStock ? "opacity-65" : ""}`}
+                    className={`min-w-14 rounded-lg border px-3 py-2 text-center text-sm font-medium transition-colors ${selected ? "border-brand-red bg-brand-red text-white" : "border-border bg-card hover:border-brand-red"}`}
                   >
                     <span>{item.size}</span>
-                    {item.stock > 0 && <span className="block text-[10px] font-normal">{item.stock} disp.</span>}
-                    {outOfStock && <span className="block text-[10px] font-normal">sin stock</span>}
+                    <span className="block text-[10px] font-normal">{item.stock} disp.</span>
                   </button>
                 );
               })}
             </div>
           </fieldset>
+        )}
+        {selectedVariant && availableSizes.length === 0 && (
+          <p className="mt-5 w-full border-t border-border pt-5 text-sm text-muted-foreground">
+            Esta variante no tiene talles disponibles. Podés consultar por reposición.
+          </p>
         )}
 
         <a
@@ -132,8 +136,8 @@ export default function ProductDetails({ product }: { product: CatalogProduct })
           <MessageCircle className="h-5 w-5" aria-hidden="true" />
           Consultar por WhatsApp
         </a>
-        {!hasSelection && <p className="mt-2 text-sm text-muted-foreground">Elegí una variante y un talle para consultar.</p>}
-        {hasSelection && selectedInventory?.stock === 0 && <p className="mt-2 text-sm text-muted-foreground">Este talle figura sin stock; podés consultar por reposición.</p>}
+        {!selectedVariant && <p className="mt-2 text-sm text-muted-foreground">Elegí una variante para consultar.</p>}
+        {selectedVariant && availableSizes.length > 0 && !selectedInventory && <p className="mt-2 text-sm text-muted-foreground">Elegí un talle con stock para continuar.</p>}
       </section>
     </div>
   );

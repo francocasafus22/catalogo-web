@@ -35,7 +35,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
 
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem={false} disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <div className="flex flex-col flex-1 bg-background">
             <Navbar />
             {children}

@@ -8,6 +8,7 @@ export type CatalogProduct = {
   colors: string[];
   sizes: string[];
   stock?: number;
+  visible?: boolean;
   variants?: CatalogVariant[];
   categories: string[];
   tags: string[];

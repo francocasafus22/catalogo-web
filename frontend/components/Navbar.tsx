@@ -2,6 +2,7 @@ import { LayoutDashboard } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { ModeToggle } from "@/components/mode-toggle";
 
 const apiUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000/api";
 
@@ -35,10 +36,11 @@ export default async function Navbar() {
     </Link>
 
     <div className="flex items-center gap-3">
+      <ModeToggle />
       {isAdmin && (
         <Link
           href="/dashboard"
-          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-brand-red/20 bg-brand-pink px-4 text-sm font-semibold text-brand-red transition-colors hover:bg-brand-red hover:text-white"
+          className="inline-flex min-h-11 items-center gap-2 rounded-full border border-brand-red/20 bg-primary/70 px-4 text-sm font-semibold text-brand-red transition-colors hover:bg-brand-red hover:text-white"
         >
           <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
           Dashboard

@@ -30,7 +30,7 @@ function toSlug(value: string) {
 
 const SELECT_PRODUCTS = `
   SELECT p.id, p.name, p.slug, p.description, p.price, p.cost_price, p.image, p.colors, p.sizes,
-    p.stock, p.variants, p.category_id, p.tags, p.created_at, p.updated_at,
+    p.stock, p.variants, p.category_id, p.tags, p.visible, p.created_at, p.updated_at,
     c.name AS category_name, c.slug AS category_slug
   FROM products p JOIN categories c ON c.id = p.category_id
 `;
@@ -40,22 +40,22 @@ export class ProductService {
   constructor(private readonly db: DatabaseService) {}
 
   async publicList() {
-    const { rows } = await this.db.query(`${SELECT_PRODUCTS} ORDER BY p.created_at DESC, p.id DESC`);
+    const { rows } = await this.db.query(`${SELECT_PRODUCTS} WHERE p.visible = TRUE AND p.stock > 0 ORDER BY p.created_at DESC, p.id DESC`);
     return rows.map((row) => ({
       id: Number(row.id), name: row.name, slug: row.slug, description: row.description,
       price: Number(row.price), image: row.image, colors: row.colors, sizes: row.sizes,
-      stock: Number(row.stock), variants: row.variants, categories: [row.category_slug], tags: row.tags,
+      stock: Number(row.stock), variants: row.variants, categories: [row.category_slug], tags: row.tags, visible: row.visible,
     }));
   }
 
   async publicBySlug(slug: string) {
-    const { rows } = await this.db.query(`${SELECT_PRODUCTS} WHERE p.slug = $1`, [slug]);
+    const { rows } = await this.db.query(`${SELECT_PRODUCTS} WHERE p.slug = $1 AND p.visible = TRUE AND p.stock > 0`, [slug]);
     if (!rows[0]) throw new NotFoundException("Producto no encontrado");
     const row = rows[0];
     return {
       id: Number(row.id), name: row.name, slug: row.slug, description: row.description,
       price: Number(row.price), image: row.image, colors: row.colors, sizes: row.sizes,
-      stock: Number(row.stock), variants: row.variants, categories: [row.category_slug], tags: row.tags,
+      stock: Number(row.stock), variants: row.variants, categories: [row.category_slug], tags: row.tags, visible: row.visible,
     };
   }
 
@@ -68,9 +68,9 @@ export class ProductService {
     const slug = await this.uniqueSlug(toSlug(input.name));
     const summary = summarizeVariants(input.variants);
     const { rows } = await this.db.query(
-      `INSERT INTO products (name, slug, description, price, cost_price, image, colors, sizes, stock, category_id, tags, variants)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb) RETURNING id`,
-      [input.name.trim(), slug, input.description.trim(), input.price, input.costPrice, [input.image.trim()], summary.colors, summary.sizes, summary.stock, input.categoryId, input.tags ?? [], JSON.stringify(input.variants)],
+      `INSERT INTO products (name, slug, description, price, cost_price, image, colors, sizes, stock, category_id, tags, variants, visible)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13) RETURNING id`,
+      [input.name.trim(), slug, input.description.trim(), input.price, input.costPrice, [input.image.trim()], summary.colors, summary.sizes, summary.stock, input.categoryId, input.tags ?? [], JSON.stringify(input.variants), input.visible ?? false],
     ).catch((error) => this.mapWriteError(error));
     return this.adminById(Number(rows[0].id));
   }
@@ -91,10 +91,10 @@ export class ProductService {
     const summary = summarizeVariants(variants);
     await this.db.query(
       `UPDATE products SET name=$1, slug=$2, description=$3, price=$4, cost_price=$5, image=$6,
-       colors=$7, sizes=$8, stock=$9, category_id=$10, tags=$11, variants=$12::jsonb, updated_at=NOW() WHERE id=$13`,
+       colors=$7, sizes=$8, stock=$9, category_id=$10, tags=$11, variants=$12::jsonb, visible=$13, updated_at=NOW() WHERE id=$14`,
       [nextName, slug, input.description?.trim() ?? current.description, input.price ?? current.price,
         input.costPrice ?? current.cost_price, [input.image?.trim() ?? current.image], summary.colors, summary.sizes, summary.stock,
-        input.categoryId ?? current.categoryId, input.tags ?? current.tags, JSON.stringify(variants), id],
+        input.categoryId ?? current.categoryId, input.tags ?? current.tags, JSON.stringify(variants), input.visible ?? current.visible, id],
     ).catch((error) => this.mapWriteError(error));
     return this.adminById(id);
   }

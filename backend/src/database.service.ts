@@ -42,12 +42,25 @@ export class DatabaseService extends Pool implements OnModuleInit, OnModuleDestr
         variants JSONB NOT NULL DEFAULT '[]'::jsonb,
         category_id BIGINT NOT NULL REFERENCES categories(id) ON DELETE RESTRICT,
         tags TEXT[] NOT NULL DEFAULT '{}',
+        visible BOOLEAN NOT NULL DEFAULT FALSE,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
       )
     `);
     await this.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS cost_price INTEGER NOT NULL DEFAULT 0 CHECK (cost_price >= 0)");
     await this.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS variants JSONB NOT NULL DEFAULT '[]'::jsonb");
+    await this.query("ALTER TABLE products ADD COLUMN IF NOT EXISTS visible BOOLEAN NOT NULL DEFAULT FALSE");
+    await this.query(`
+      CREATE TABLE IF NOT EXISTS app_migrations (
+        name TEXT PRIMARY KEY,
+        applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    const visibilityMigration = await this.query("SELECT name FROM app_migrations WHERE name = $1", ["hide-existing-products"]);
+    if (visibilityMigration.rowCount === 0) {
+      await this.query("UPDATE products SET visible = FALSE");
+      await this.query("INSERT INTO app_migrations (name) VALUES ($1)", ["hide-existing-products"]);
+    }
     await this.query(`
       UPDATE products p
       SET variants = (

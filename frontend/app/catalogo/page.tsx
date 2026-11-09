@@ -13,7 +13,7 @@ export default async function CatalogPage() {
     <main className="flex-1 bg-background px-4 py-8 sm:px-6 sm:py-12">
       <section className="mx-auto max-w-7xl">
         <header className="mb-8 rounded-3xl bg-primary/60 px-5 py-8 sm:mb-10 sm:px-10 sm:py-12">
-          <span className="inline-flex rounded-full border border-brand-red/20 bg-white/70 px-3 py-1 text-xs font-semibold tracking-wide text-brand-red">
+          <span className="inline-flex rounded-full border border-brand-red/20 bg-background/70 px-3 py-1 text-xs font-semibold tracking-wide text-brand-red">
             MARIANA DURAN
           </span>
           <h1 className="mt-4 text-3xl font-black tracking-tight text-brand-red sm:text-5xl">

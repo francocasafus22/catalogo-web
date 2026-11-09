@@ -1,4 +1,3 @@
-import { products as fallbackProducts } from "@/data/products";
 import type { CatalogProduct } from "@/lib/catalog-types";
 
 const apiUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000/api";
@@ -7,16 +6,10 @@ export async function getCatalogProducts(): Promise<CatalogProduct[]> {
   try {
     const response = await fetch(`${apiUrl}/products`, { cache: "no-store" });
     if (!response.ok) throw new Error("Catalog API unavailable");
-    return await response.json() as CatalogProduct[];
+    const products = await response.json() as CatalogProduct[];
+    return products.filter((product) => product.visible === true);
   } catch {
-    return fallbackProducts.map((product) => ({
-      ...product,
-      stock: 0,
-      variants: product.colors.map((color) => ({
-        name: "Color", value: color,
-        sizes: product.sizes.map((size) => ({ size, stock: 0 })),
-      })),
-    }));
+    return [];
   }
 }
 
@@ -25,8 +18,9 @@ export async function getCatalogProduct(slug: string): Promise<CatalogProduct | 
     const response = await fetch(`${apiUrl}/products/${encodeURIComponent(slug)}`, { cache: "no-store" });
     if (response.status === 404) return undefined;
     if (!response.ok) throw new Error("Catalog API unavailable");
-    return await response.json() as CatalogProduct;
+    const product = await response.json() as CatalogProduct;
+    return product.visible === true ? product : undefined;
   } catch {
-    return fallbackProducts.find((product) => product.slug === slug);
+    return undefined;
   }
 }

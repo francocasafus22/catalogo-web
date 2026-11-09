@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "@/components/product-card";
 import type { CatalogProduct } from "@/lib/catalog-types";
 
-const PAGE_SIZE = 3;
+const PAGE_SIZE = 12;
 
 function categoryLabel(category: string) {
   return category.charAt(0).toUpperCase() + category.slice(1);
@@ -82,7 +82,7 @@ export default function CatalogGrid({ products }: { products: CatalogProduct[] }
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-6 lg:grid-cols-4">
           {visibleProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}

@@ -1,10 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { ArrowUpRight, Package, ReceiptText, Shirt, Tags } from "lucide-react";
 import AdminLogoutButton from "@/components/admin-logout-button";
-import AdminCatalogManager from "@/components/admin-catalog-manager";
-import AdminSalesPanel from "@/components/admin-sales-panel";
+import AdminDashboardTabs from "@/components/admin-dashboard-tabs";
 
 const apiUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000/api";
 
@@ -54,32 +51,11 @@ export default async function DashboardPage() {
           <AdminLogoutButton />
         </header>
 
-        <section aria-label="Resumen del catálogo" className="mt-7 grid gap-4 sm:grid-cols-3">
-          {[
-            { label: "Productos", value: catalog.products.length, Icon: Package },
-            { label: "Categorías", value: catalog.categories.length, Icon: Tags },
-            { label: "Prendas destacadas", value: catalog.products.filter((product) => product.tags.includes("destacado")).length, Icon: Shirt },
-          ].map(({ label, value, Icon }) => (
-            <article key={label} className="rounded-2xl border border-border bg-card p-5 sm:p-6">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">{label}</span>
-                <span className="rounded-xl bg-brand-pink p-2 text-brand-red"><Icon className="h-5 w-5" aria-hidden="true" /></span>
-              </div>
-              <p className="mt-4 text-3xl font-black">{value}</p>
-            </article>
-          ))}
-        </section>
-
-        <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:justify-end">
-          <Link href="#ventas" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-brand-red/30 px-5 text-sm font-semibold text-brand-red transition hover:bg-brand-pink">
-            <ReceiptText className="h-4 w-4" aria-hidden="true" /> Ventas y ganancias
-          </Link>
-          <Link href="/catalogo" className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-5 text-sm font-semibold transition hover:bg-muted">
-            Ver catálogo público <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-          </Link>
-        </div>
-        <AdminCatalogManager />
-        <AdminSalesPanel />
+        <AdminDashboardTabs
+          productCount={catalog.products.length}
+          categoryCount={catalog.categories.length}
+          featuredCount={catalog.products.filter((product) => product.tags.includes("destacado")).length}
+        />
       </div>
     </main>
   );
