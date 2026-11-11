@@ -10,7 +10,7 @@ type VariantSize = { size: string; stock: number };
 type ProductVariant = { name: string; value: string; sizes: VariantSize[]; images: string[] };
 type Product = {
   id: number; name: string; slug: string; description: string; price: number; costPrice: number;
-  image: string; variants: ProductVariant[]; sizes: string[]; stock: number;
+  variants: ProductVariant[]; sizes: string[]; stock: number;
   categoryId: number; category_name: string; tags: string[]; visible: boolean;
 };
 type ProductForm = {
@@ -179,8 +179,8 @@ export default function AdminCatalogManager() {
     setSaving(true);
     setError("");
     setNotice("");
-    if (!productForm.variants[0]?.images.length) {
-      setError("La primera variante debe tener al menos una foto; esa será la imagen principal del producto.");
+    if (!productForm.variants.some((variant) => variant.images.length)) {
+      setError("Agregá al menos una foto a una variante; la primera variante con fotos será la imagen principal del producto.");
       setSaving(false);
       return;
     }

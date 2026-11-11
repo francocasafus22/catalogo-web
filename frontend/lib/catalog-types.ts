@@ -4,7 +4,6 @@ export type CatalogProduct = {
   slug: string;
   description: string;
   price: number;
-  image: string[];
   colors: string[];
   sizes: string[];
   stock?: number;

@@ -35,7 +35,6 @@ export class DatabaseService extends Pool implements OnModuleInit, OnModuleDestr
         description TEXT NOT NULL DEFAULT '',
         price INTEGER NOT NULL CHECK (price >= 0),
         cost_price INTEGER NOT NULL DEFAULT 0 CHECK (cost_price >= 0),
-        image TEXT[] NOT NULL DEFAULT '{}',
         colors TEXT[] NOT NULL DEFAULT '{}',
         sizes TEXT[] NOT NULL DEFAULT '{}',
         stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
@@ -77,12 +76,22 @@ export class DatabaseService extends Pool implements OnModuleInit, OnModuleDestr
       WHERE p.variants = '[]'::jsonb AND cardinality(p.colors) > 0
     `);
     await this.query(`
-      UPDATE products
-      SET variants = jsonb_set(variants, '{0,images}', to_jsonb(ARRAY[image[1]]), TRUE)
-      WHERE jsonb_array_length(variants) > 0
-        AND COALESCE(jsonb_array_length(variants->0->'images'), 0) = 0
-        AND cardinality(image) > 0
+      DO $$ BEGIN
+        IF EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'products' AND column_name = 'image'
+        ) THEN
+          EXECUTE $migration$
+            UPDATE products
+            SET variants = jsonb_set(variants, '{0,images}', to_jsonb(ARRAY[image[1]]), TRUE)
+            WHERE jsonb_array_length(variants) > 0
+              AND COALESCE(jsonb_array_length(variants->0->'images'), 0) = 0
+              AND cardinality(image) > 0
+          $migration$;
+        END IF;
+      END $$
     `);
+    await this.query("ALTER TABLE products DROP COLUMN IF EXISTS image");
     await this.query(`
       CREATE TABLE IF NOT EXISTS sales (
         id BIGSERIAL PRIMARY KEY,
@@ -119,23 +128,24 @@ export class DatabaseService extends Pool implements OnModuleInit, OnModuleDestr
     }
 
     const initialProducts = [
-      { name: "Campera Boxi con Piel Venice", slug: "campera-boxi-con-piel-venice", description: "Campera con Piel · Boxi fit", price: 45000, image: ["/campera.png"], colors: ["Negro", "Beige", "Gris"], sizes: ["S", "M", "L", "XL"], category: "camperas", tags: ["nuevo", "destacado"] },
-      { name: "Jean Rigido Wide Leg", slug: "jean-rigido-wide-leg", description: "Jean rigido con corte wide leg", price: 35000, image: ["/jean-wide-leg.JPEG"], colors: ["Negro", "Azul", "Gris"], sizes: ["36", "38", "40", "42", "44"], category: "jeans", tags: ["nuevo", "destacado"] },
-      { name: "Calza Lycra Chupin con Friza", slug: "calza-lycra-chupin-con-friza", description: "Calza chupin con friza y lycra", price: 15000, image: ["/calza-chupin.JPEG"], colors: ["Negro"], sizes: ["S", "M", "L", "XL"], category: "calzas", tags: ["nuevo", "destacado"] },
-      { name: "Jean Elastizado Chupin", slug: "jean-elastizado-chupin", description: "Jean elastizado con corte chupin", price: 35000, image: ["/jean-chupin-azul.JPEG"], colors: ["Negro", "Beige", "Gris"], sizes: ["36", "38", "40", "42", "44"], category: "jeans", tags: ["nuevo", "destacado"] },
+      { name: "Campera Boxi con Piel Venice", slug: "campera-boxi-con-piel-venice", description: "Campera con Piel · Boxi fit", price: 45000, image: "/campera.png", colors: ["Negro", "Beige", "Gris"], sizes: ["S", "M", "L", "XL"], category: "camperas", tags: ["nuevo", "destacado"] },
+      { name: "Jean Rigido Wide Leg", slug: "jean-rigido-wide-leg", description: "Jean rigido con corte wide leg", price: 35000, image: "/jean-wide-leg.JPEG", colors: ["Negro", "Azul", "Gris"], sizes: ["36", "38", "40", "42", "44"], category: "jeans", tags: ["nuevo", "destacado"] },
+      { name: "Calza Lycra Chupin con Friza", slug: "calza-lycra-chupin-con-friza", description: "Calza chupin con friza y lycra", price: 15000, image: "/calza-chupin.JPEG", colors: ["Negro"], sizes: ["S", "M", "L", "XL"], category: "calzas", tags: ["nuevo", "destacado"] },
+      { name: "Jean Elastizado Chupin", slug: "jean-elastizado-chupin", description: "Jean elastizado con corte chupin", price: 35000, image: "/jean-chupin-azul.JPEG", colors: ["Negro", "Beige", "Gris"], sizes: ["36", "38", "40", "42", "44"], category: "jeans", tags: ["nuevo", "destacado"] },
     ];
     for (const product of initialProducts) {
       const variants = product.colors.map((color) => ({
         name: "Color",
         value: color,
         sizes: product.sizes.map((size) => ({ size, stock: 0 })),
+        images: color === product.colors[0] ? [product.image] : [],
       }));
       await this.query(
-        `INSERT INTO products (name, slug, description, price, image, colors, sizes, category_id, tags)
-         SELECT $1, $2, $3, $4, $5, $6, $7, categories.id, $8
-         FROM categories WHERE categories.slug = $9
+        `INSERT INTO products (name, slug, description, price, colors, sizes, category_id, tags)
+         SELECT $1, $2, $3, $4, $5, $6, categories.id, $7
+         FROM categories WHERE categories.slug = $8
          ON CONFLICT (slug) DO NOTHING`,
-        [product.name, product.slug, product.description, product.price, product.image, product.colors, product.sizes, product.tags, product.category],
+        [product.name, product.slug, product.description, product.price, product.colors, product.sizes, product.tags, product.category],
       );
       await this.query(
         "UPDATE products SET variants=$2::jsonb WHERE slug=$1 AND variants='[]'::jsonb",
