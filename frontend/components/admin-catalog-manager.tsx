@@ -14,11 +14,11 @@ type Product = {
   categoryId: number; category_name: string; tags: string[]; visible: boolean;
 };
 type ProductForm = {
-  name: string; description: string; price: string; costPrice: string; image: string;
+  name: string; description: string; price: string; costPrice: string;
   variants: ProductVariant[]; categoryId: string; tags: string; visible: boolean;
 };
 const emptyProduct: ProductForm = {
-  name: "", description: "", price: "", costPrice: "", image: "", categoryId: "", tags: "",
+  name: "", description: "", price: "", costPrice: "", categoryId: "", tags: "",
   variants: [{ name: "Color", value: "", sizes: [{ size: "", stock: 0 }], images: [] }], visible: false,
 };
 const splitList = (value: string) => value.split(",").map((item) => item.trim()).filter(Boolean);
@@ -98,7 +98,7 @@ export default function AdminCatalogManager() {
   function beginEditProduct(product: Product) {
     setEditingProduct(product.id);
     setProductForm({
-      name: product.name, description: product.description, price: String(product.price), costPrice: String(product.costPrice), image: product.image,
+      name: product.name, description: product.description, price: String(product.price), costPrice: String(product.costPrice),
       variants: product.variants.map((variant) => ({ ...variant, images: variant.images ?? [] })),
       categoryId: String(product.categoryId), tags: product.tags.join(", "), visible: product.visible,
     });
@@ -179,12 +179,18 @@ export default function AdminCatalogManager() {
     setSaving(true);
     setError("");
     setNotice("");
+    if (!productForm.variants[0]?.images.length) {
+      setError("La primera variante debe tener al menos una foto; esa será la imagen principal del producto.");
+      setSaving(false);
+      return;
+    }
     const payload = {
       name: productForm.name.trim(), description: productForm.description.trim(),
-      price: Number(productForm.price), costPrice: Number(productForm.costPrice), image: productForm.image.trim(),
+      price: Number(productForm.price), costPrice: Number(productForm.costPrice),
       variants: productForm.variants.map((variant) => ({
         name: variant.name.trim(), value: variant.value.trim(),
         sizes: variant.sizes.map((item) => ({ size: item.size.trim(), stock: Number(item.stock) })),
+        images: variant.images,
       })),
       categoryId: Number(productForm.categoryId), tags: splitList(productForm.tags), visible: productForm.visible,
     };
@@ -288,7 +294,6 @@ export default function AdminCatalogManager() {
                 <label className="text-sm font-medium">Categoría<select required value={productForm.categoryId} onChange={(event) => setProductForm({ ...productForm, categoryId: event.target.value })} className={inputClass}><option value="" disabled>Seleccioná una categoría</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
                 <label className="text-sm font-medium">Precio (ARS)<input required type="number" min="0" step="1" value={productForm.price} onChange={(event) => setProductForm({ ...productForm, price: event.target.value })} className={inputClass} /></label>
                 <label className="text-sm font-medium">Precio de costo (ARS)<input required type="number" min="0" step="1" value={productForm.costPrice} onChange={(event) => setProductForm({ ...productForm, costPrice: event.target.value })} className={inputClass} /></label>
-                <label className="text-sm font-medium sm:col-span-2">Imagen (URL o ruta pública, por ejemplo /campera.png)<input required value={productForm.image} onChange={(event) => setProductForm({ ...productForm, image: event.target.value })} placeholder="/campera.png o https://…" className={inputClass} /></label>
                 <label className="text-sm font-medium sm:col-span-2">Descripción<textarea required rows={2} value={productForm.description} onChange={(event) => setProductForm({ ...productForm, description: event.target.value })} className="mt-1.5 w-full rounded-xl border border-input bg-background p-3 text-base outline-none focus:border-brand-red focus:ring-2 focus:ring-brand-red/20" /></label>
                 <div className="sm:col-span-2">
                   <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">

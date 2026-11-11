@@ -13,7 +13,7 @@ export default function ProductDetails({ product }: { product: CatalogProduct })
   const selectedVariant = selectedVariantIndex === null ? undefined : variants[selectedVariantIndex];
   const selectedInventory = selectedVariant?.sizes.find((item) => item.size === selectedSize);
   const availableSizes = selectedVariant?.sizes.filter((item) => item.stock > 0) ?? [];
-  const images = selectedVariant?.images?.length ? selectedVariant.images : product.image;
+  const images = selectedVariant?.images ?? [];
   const activeImage = images[activeImageIndex] ?? images[0];
   const hasSelection = Boolean(selectedVariant && (selectedInventory || availableSizes.length === 0));
   const variantLabel = selectedVariant ? `${selectedVariant.name}: ${selectedVariant.value}` : "";
@@ -58,9 +58,6 @@ export default function ProductDetails({ product }: { product: CatalogProduct })
               </button>
             ))}
           </div>
-        )}
-        {selectedVariant && !selectedVariant.images?.length && (
-          <p className="mt-2 text-center text-xs text-muted-foreground">Esta variante usa las fotos generales del producto.</p>
         )}
       </div>
 

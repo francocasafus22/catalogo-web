@@ -9,7 +9,7 @@ export default function ProductCard({ product }: { product: any }) {
             <div className="relative aspect-[4/5] overflow-hidden bg-muted">
             
             <Image
-                src={product.image[0]}
+                src={product.variants?.[0]?.images?.[0]}
                 alt={product.name}
                 fill
                 unoptimized

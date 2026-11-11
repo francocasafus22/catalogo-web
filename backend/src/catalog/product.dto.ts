@@ -21,7 +21,6 @@ export class CreateProductDto {
   @IsString() description!: string;
   @IsInt() @Min(0) price!: number;
   @IsInt() @Min(0) costPrice!: number;
-  @IsString() @MinLength(1) image!: string;
   @IsInt() @Min(1) categoryId!: number;
   @IsArray() @ArrayMinSize(1) @ValidateNested({ each: true }) @Type(() => ProductVariantDto)
   variants!: ProductVariantDto[];
@@ -34,7 +33,6 @@ export class UpdateProductDto {
   @IsOptional() @IsString() description?: string;
   @IsOptional() @IsInt() @Min(0) price?: number;
   @IsOptional() @IsInt() @Min(0) costPrice?: number;
-  @IsOptional() @IsString() @MinLength(1) image?: string;
   @IsOptional() @IsInt() @Min(1) categoryId?: number;
   @IsOptional() @IsArray() @ArrayMinSize(1) @ValidateNested({ each: true }) @Type(() => ProductVariantDto)
   variants?: ProductVariantDto[];

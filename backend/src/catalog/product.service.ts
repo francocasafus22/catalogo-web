@@ -5,6 +5,8 @@ import { CreateProductDto, ProductVariantDto, UpdateProductDto } from "./product
 type ProductVariant = ProductVariantDto;
 
 function summarizeVariants(variants: ProductVariant[]) {
+  if (!variants.length) throw new ConflictException("Cada producto debe tener al menos una variante");
+  if (!variants[0].images?.length) throw new ConflictException("La primera variante debe tener al menos una foto");
   const variantKeys = new Set<string>();
   for (const variant of variants) {
     const variantKey = `${variant.name.trim().toLowerCase()}:${variant.value.trim().toLowerCase()}`;
@@ -43,7 +45,7 @@ export class ProductService {
     const { rows } = await this.db.query(`${SELECT_PRODUCTS} WHERE p.visible = TRUE AND p.stock > 0 ORDER BY p.created_at DESC, p.id DESC`);
     return rows.map((row) => ({
       id: Number(row.id), name: row.name, slug: row.slug, description: row.description,
-      price: Number(row.price), image: row.image, colors: row.colors, sizes: row.sizes,
+      price: Number(row.price), image: row.variants?.[0]?.images?.length ? row.variants[0].images : [], colors: row.colors, sizes: row.sizes,
       stock: Number(row.stock), variants: row.variants, categories: [row.category_slug], tags: row.tags, visible: row.visible,
     }));
   }
@@ -54,14 +56,14 @@ export class ProductService {
     const row = rows[0];
     return {
       id: Number(row.id), name: row.name, slug: row.slug, description: row.description,
-      price: Number(row.price), image: row.image, colors: row.colors, sizes: row.sizes,
+      price: Number(row.price), image: row.variants?.[0]?.images?.length ? row.variants[0].images : [], colors: row.colors, sizes: row.sizes,
       stock: Number(row.stock), variants: row.variants, categories: [row.category_slug], tags: row.tags, visible: row.visible,
     };
   }
 
   async adminList() {
     const { rows } = await this.db.query(`${SELECT_PRODUCTS} ORDER BY p.created_at DESC, p.id DESC`);
-    return rows.map((row) => ({ ...row, id: Number(row.id), categoryId: Number(row.category_id), price: Number(row.price), costPrice: Number(row.cost_price), stock: Number(row.stock), image: row.image[0] ?? "" }));
+    return rows.map((row) => ({ ...row, id: Number(row.id), categoryId: Number(row.category_id), price: Number(row.price), costPrice: Number(row.cost_price), stock: Number(row.stock), image: row.variants?.[0]?.images?.[0] ?? "" }));
   }
 
   async create(input: CreateProductDto) {
@@ -70,7 +72,7 @@ export class ProductService {
     const { rows } = await this.db.query(
       `INSERT INTO products (name, slug, description, price, cost_price, image, colors, sizes, stock, category_id, tags, variants, visible)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12::jsonb,$13) RETURNING id`,
-      [input.name.trim(), slug, input.description.trim(), input.price, input.costPrice, [input.image.trim()], summary.colors, summary.sizes, summary.stock, input.categoryId, input.tags ?? [], JSON.stringify(input.variants), input.visible ?? false],
+      [input.name.trim(), slug, input.description.trim(), input.price, input.costPrice, input.variants[0].images?.length ? input.variants[0].images : [], summary.colors, summary.sizes, summary.stock, input.categoryId, input.tags ?? [], JSON.stringify(input.variants), input.visible ?? false],
     ).catch((error) => this.mapWriteError(error));
     return this.adminById(Number(rows[0].id));
   }
@@ -79,7 +81,7 @@ export class ProductService {
     const { rows } = await this.db.query(`${SELECT_PRODUCTS} WHERE p.id = $1`, [id]);
     if (!rows[0]) throw new NotFoundException("Producto no encontrado");
     const row = rows[0];
-    return { ...row, id: Number(row.id), categoryId: Number(row.category_id), price: Number(row.price), costPrice: Number(row.cost_price), stock: Number(row.stock), image: row.image[0] ?? "" };
+    return { ...row, id: Number(row.id), categoryId: Number(row.category_id), price: Number(row.price), costPrice: Number(row.cost_price), stock: Number(row.stock), image: row.variants?.[0]?.images?.[0] ?? "" };
   }
 
   async update(id: number, input: UpdateProductDto) {
@@ -93,7 +95,7 @@ export class ProductService {
       `UPDATE products SET name=$1, slug=$2, description=$3, price=$4, cost_price=$5, image=$6,
        colors=$7, sizes=$8, stock=$9, category_id=$10, tags=$11, variants=$12::jsonb, visible=$13, updated_at=NOW() WHERE id=$14`,
       [nextName, slug, input.description?.trim() ?? current.description, input.price ?? current.price,
-        input.costPrice ?? current.cost_price, [input.image?.trim() ?? current.image], summary.colors, summary.sizes, summary.stock,
+        input.costPrice ?? current.cost_price, variants[0]?.images?.length ? variants[0].images : [], summary.colors, summary.sizes, summary.stock,
         input.categoryId ?? current.categoryId, input.tags ?? current.tags, JSON.stringify(variants), input.visible ?? current.visible, id],
     ).catch((error) => this.mapWriteError(error));
     return this.adminById(id);

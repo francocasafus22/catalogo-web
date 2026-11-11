@@ -77,6 +77,13 @@ export class DatabaseService extends Pool implements OnModuleInit, OnModuleDestr
       WHERE p.variants = '[]'::jsonb AND cardinality(p.colors) > 0
     `);
     await this.query(`
+      UPDATE products
+      SET variants = jsonb_set(variants, '{0,images}', to_jsonb(ARRAY[image[1]]), TRUE)
+      WHERE jsonb_array_length(variants) > 0
+        AND COALESCE(jsonb_array_length(variants->0->'images'), 0) = 0
+        AND cardinality(image) > 0
+    `);
+    await this.query(`
       CREATE TABLE IF NOT EXISTS sales (
         id BIGSERIAL PRIMARY KEY,
         total_revenue BIGINT NOT NULL CHECK (total_revenue >= 0),
